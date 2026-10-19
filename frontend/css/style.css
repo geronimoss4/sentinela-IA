@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Cinzel", serif;
+    min-height: 100vh;
+    color: white;
+
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.75),
+        rgba(0, 0, 0, 0.85)),
+        url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3");
+
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+
+    animation: fundo 20s infinite alternate;
+}
+
+@keyframes fundo {
+    from {
+        background-size: 100%;
+    }
+
+    to {
+        background-size: 110%;
+    }
+}
+
+.container {
+    width: 90%;
+    max-width: 900px;
+
+    margin: 40px auto;
+    padding: 35px;
+
+    text-align: center;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 0 25px rgba(0, 0, 0, 0.6);
+
+    animation: aparecer 0.8s ease;
+}
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h2 {
+    font-size: 32px;
+
+    margin-bottom: 25px;
+
+    letter-spacing: 3px;
+
+    text-transform: uppercase;
+
+    animation: brilho 3s infinite alternate;
+}
+
+@keyframes brilho {
+    from {
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+
+    to {
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    }
+}
+
+input,
+select,
+textarea,
+button {
+    width: 100%;
+
+    margin-top: 12px;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    font-size: 16px;
+
+    background: rgba(255, 255, 255, 0.1);
+
+    color: white;
+
+    transition: 0.3s;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+
+    transform: scale(1.02);
+
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+button {
+    cursor: pointer;
+
+    font-weight: bold;
+
+    text-transform: uppercase;
+
+    letter-spacing: 2px;
+}
+
+button:hover {
+    transform: translateY(-3px);
+
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.card {
+    margin: 15px 0;
+
+    padding: 20px;
+
+    border-radius: 15px;
+
+    background: rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(10px);
+
+    animation: aparecer 0.5s ease;
+}
+
+.verde,
+.amarelo,
+.vermelho {
+    display: inline-block;
+
+    padding: 8px 15px;
+
+    border-radius: 8px;
+
+    margin-top: 10px;
+}
+
+.verde {
+    background: rgba(0, 255, 120, 0.4);
+}
+
+.amarelo {
+    background: rgba(255, 210, 0, 0.4);
+}
+
+.vermelho {
+    background: rgba(255, 70, 70, 0.5);
+}
+/* =========================================================
+   TEMA EGÍPCIO — CAMPO CENTRO OESTE
+   ========================================================= */
+:root {
+    --egito-bg: #080807;
+    --egito-panel: rgba(15, 15, 13, .88);
+    --egito-panel-2: rgba(28, 27, 23, .78);
+    --egito-gold: #d4af37;
+    --egito-gold-light: #ead8a6;
+    --egito-border: rgba(212, 175, 55, .38);
+    --egito-muted: #aaa28d;
+}
+
+html { background: var(--egito-bg); }
+body {
+    font-family: "Cinzel", serif;
+    color: #f2ead5;
+    background-color: var(--egito-bg);
+    background-image:
+        linear-gradient(rgba(5,5,4,.70), rgba(5,5,4,.86)),
+        url("../assets/egypt-bg.svg");
+    background-position: center;
+    background-repeat: repeat, no-repeat;
+    background-size: auto, cover;
+    background-attachment: fixed;
+}
+
+.container {
+    position: relative;
+    width: min(92%, 980px);
+    margin: 42px auto;
+    padding: 38px;
+    text-align: center;
+    background: linear-gradient(145deg, rgba(15,15,13,.92), rgba(8,8,7,.86));
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--egito-border);
+    border-radius: 4px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.65), inset 0 0 40px rgba(212,175,55,.025);
+}
+.container::before,
+.container::after {
+    content: "𓂀 𓋹 𓆣 𓅓 𓏏 𓂋";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(212,175,55,.24);
+    letter-spacing: 14px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.container::before { top: 9px; }
+.container::after { bottom: 9px; }
+
+h1,h2,h3,h4 { color: var(--egito-gold-light); text-shadow: 0 2px 14px rgba(212,175,55,.15); }
+h2 { font-family: "Cinzel Decorative", "Cinzel", serif; letter-spacing: 4px; }
+
+input, select, textarea, button {
+    border: 1px solid rgba(212,175,55,.32);
+    border-radius: 3px;
+    background: rgba(255,255,255,.035);
+    color: #f4ecd8;
+    box-shadow: inset 0 0 14px rgba(0,0,0,.25);
+}
+select option { background: #171611; color: #f4ecd8; }
+input::placeholder, textarea::placeholder { color: #8e8878; }
+input:focus, select:focus, textarea:focus {
+    border-color: var(--egito-gold);
+    transform: none;
+    box-shadow: 0 0 0 2px rgba(212,175,55,.08), 0 0 18px rgba(212,175,55,.12);
+}
+button {
+    background: linear-gradient(135deg, #9c7821, #d4af37, #9c7821);
+    color: #17130a;
+    border-color: #d4af37;
+    font-family: "Cinzel", serif;
+}
+button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(212,175,55,.16); }
+.card {
+    background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(0,0,0,.18));
+    border: 1px solid rgba(212,175,55,.2);
+    border-radius: 3px;
+}
+
+/* Identidade na tela de login */
+.login-brand { margin: 0 auto 18px; max-width: 610px; }
+.login-brand img { width: min(100%, 520px); display: block; margin: auto; filter: drop-shadow(0 8px 24px rgba(212,175,55,.10)); }
+.login-subtitle { color: var(--egito-muted); letter-spacing: 4px; font-size: 12px; margin: 8px 0 22px; }
+
+/* Classes antigas das páginas recebem o mesmo acabamento */
+.pacientes-fila, .consultorio-input, .fila-item {
+    background: rgba(20,20,17,.82) !important;
+    border-color: rgba(212,175,55,.25) !important;
+    color: #eee6d2 !important;
+}
+.pacientes-fila h3, .fila-item strong { color: var(--egito-gold-light) !important; }
+.pacientes-fila h3 span, .fila-item small { color: #99917f !important; }
+.btn-tv, .btn-abrir-tv {
+    background: linear-gradient(135deg,#8f6a18,#d4af37) !important;
+    color: #16120a !important;
+    border: 1px solid #d4af37 !important;
+}
+hr { border: 0; border-top: 1px solid rgba(212,175,55,.25); margin: 24px 0; }
+
+/* Indicadores continuam coloridos apenas onde a função exige */
+.verde { background: rgba(58,140,78,.28); border: 1px solid rgba(93,190,112,.45); }
+.amarelo { background: rgba(191,146,24,.28); border: 1px solid rgba(212,175,55,.55); }
+.vermelho { background: rgba(145,44,36,.30); border: 1px solid rgba(218,83,70,.5); }
+
+@media (max-width: 700px) {
+    .container { width: 94%; padding: 26px 18px; margin: 24px auto; }
+    h2 { font-size: 24px; }
+    .container::before, .container::after { letter-spacing: 7px; }
+}
+.site-brand { width: min(92%, 520px); margin: 20px auto -22px; position: relative; z-index: 2; text-align: center; }
+.site-brand img { width: 100%; max-height: 150px; object-fit: contain; filter: drop-shadow(0 5px 20px rgba(212,175,55,.08)); }

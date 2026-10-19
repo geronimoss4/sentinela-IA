@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta Médica</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .consulta-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; text-align:left; }
+    .consulta-grid .full { grid-column:1/-1; }
+    .campo label { display:block; color:var(--egito-gold-light); font-size:13px; margin-bottom:5px; letter-spacing:1px; }
+    .campo input, .campo select, .campo textarea { margin-top:0; }
+    .campo textarea { min-height:100px; resize:vertical; }
+    .paciente-resumo { text-align:left; margin-bottom:22px; padding:18px; border:1px solid rgba(212,175,55,.25); background:rgba(20,20,17,.82); }
+    .paciente-resumo strong { color:var(--egito-gold-light); }
+    .acoes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px; }
+    .btn-secundario { background:rgba(255,255,255,.06); color:#f4ecd8; }
+    .status { min-height:22px; margin-top:12px; color:var(--egito-muted); }
+    .assinatura-box { margin-top:18px; padding:16px; border:1px solid rgba(212,175,55,.25); background:rgba(20,20,17,.82); text-align:left; }
+    .assinatura-box label { display:block; color:var(--egito-gold-light); font-size:13px; margin-bottom:8px; letter-spacing:1px; }
+    #signatureCanvas { display:block; width:100%; max-width:760px; height:180px; background:#fff; border:1px solid rgba(212,175,55,.45); border-radius:6px; touch-action:none; cursor:crosshair; }
+    .assinatura-info { color:#99917f; font-size:12px; margin:8px 0 10px; }
+    .assinatura-acoes { display:flex; gap:10px; flex-wrap:wrap; }
+    @media(max-width:700px){ .consulta-grid,.acoes{grid-template-columns:1fr}.consulta-grid .full{grid-column:auto} }
+  </style>
+</head>
+<body>
+<div class="site-brand"><img src="assets/logo-campo-centro-oeste.svg" alt="Campo Centro Oeste"></div>
+<div class="container">
+  <h2>Consulta Médica</h2>
+  <div id="pacienteResumo" class="paciente-resumo">Carregando paciente...</div>
+
+  <form id="consultaForm" onsubmit="return salvarConsulta(event)">
+    <div class="consulta-grid">
+      <div class="campo"><label>Nome do paciente</label><input id="paciente" readonly></div>
+      <div class="campo"><label>CPF</label><input id="cpf" readonly></div>
+      <div class="campo"><label>Data da consulta</label><input id="dataConsulta" type="date" required></div>
+      <div class="campo"><label>Médico responsável</label><input id="medico" placeholder="Nome do médico" required></div>
+      <div class="campo"><label>CRM</label><input id="crm" placeholder="CRM / registro profissional"></div>
+      <div class="campo"><label>Pressão arterial</label><input id="pressao" placeholder="Ex.: 120/80 mmHg"></div>
+      <div class="campo"><label>Frequência cardíaca</label><input id="frequencia" placeholder="Ex.: 75 bpm"></div>
+      <div class="campo"><label>Saturação de O₂</label><input id="saturacao" placeholder="Ex.: 98%"></div>
+      <div class="campo full"><label>Queixa principal / sintomas</label><textarea id="queixa" placeholder="Relato clínico apresentado pelo paciente"></textarea></div>
+      <div class="campo full"><label>Histórico clínico / antecedentes</label><textarea id="historico" placeholder="Informações relevantes para a consulta"></textarea></div>
+      <div class="campo full"><label>Exame físico / avaliação médica</label><textarea id="exame" placeholder="Resultados e observações do exame físico"></textarea></div>
+      <div class="campo full"><label>Diagnóstico / hipótese diagnóstica</label><textarea id="diagnostico" placeholder="Diagnóstico definido pelo médico"></textarea></div>
+      <div class="campo"><label>Medicação prescrita</label><select id="medicacao"><option value="">Nenhuma</option></select></div>
+      <div class="campo"><label>Posologia</label><input id="posologia" placeholder="Dose, frequência e duração"></div>
+      <div class="campo full"><label>Orientações e recomendações</label><textarea id="orientacoes" placeholder="Orientações ao paciente, cuidados e recomendações"></textarea></div>
+      <div class="campo"><label>Retorno</label><input id="retorno" type="date"></div>
+      <div class="campo"><label>Destino / situação</label>
+        <select id="destino">
+          <option value="Alta médica">Alta médica</option>
+          <option value="Retorno ambulatorial">Retorno ambulatorial</option>
+          <option value="Encaminhamento">Encaminhamento</option>
+          <option value="Internação">Internação</option>
+        </select>
+      </div>
+      <div class="campo full"><label>Observações finais</label><textarea id="obs" placeholder="Informações adicionais da consulta"></textarea></div>
+    </div>
+
+    <div class="assinatura-box">
+      <label>Assinatura do médico</label>
+      <div class="assinatura-info">Desenhe sua assinatura no quadro abaixo usando o mouse, touchpad ou tela sensível ao toque. Ela será inserida no final do PDF.</div>
+      <canvas id="signatureCanvas" width="900" height="220"></canvas>
+      <div class="assinatura-acoes">
+        <button type="button" class="btn-secundario" onclick="limparAssinatura()">🧹 Limpar assinatura</button>
+      </div>
+    </div>
+
+    <div class="acoes">
+      <button type="submit">💾 Salvar consulta</button>
+      <button type="button" class="btn-secundario" onclick="gerarPDF()">📄 Gerar PDF da alta</button>
+    </div>
+    <div id="status" class="status"></div>
+  </form>
+</div>
+
+<script>
+let triagemAtual = null;
+let consultaSalva = false;
+let assinaturaStrokes = [];
+let assinaturaAtual = null;
+
+function escapeHtml(text) {
+  return String(text ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+function hojeISO() { return new Date().toISOString().slice(0,10); }
+
+async function carregarPaciente() {
+  const id = new URLSearchParams(location.search).get('triagemId');
+  if (!id) {
+    document.getElementById('pacienteResumo').innerHTML = '<strong>Nenhum paciente selecionado.</strong><br>Volte ao painel médico e clique em Atender.';
+    return;
+  }
+
+  try {
+    const r = await fetch('/triagem/' + encodeURIComponent(id));
+    if (!r.ok) throw new Error();
+    triagemAtual = await r.json();
+
+    document.getElementById('paciente').value = triagemAtual.nome || '';
+    document.getElementById('cpf').value = triagemAtual.cpf || 'Não informado';
+    document.getElementById('dataConsulta').value = hojeISO();
+    document.getElementById('queixa').value = triagemAtual.sintoma || triagemAtual.sintomas || '';
+    document.getElementById('obs').value = triagemAtual.observacao || '';
+
+    document.getElementById('pacienteResumo').innerHTML = `
+      <strong>Paciente:</strong> ${escapeHtml(triagemAtual.nome || 'Não informado')}<br>
+      <strong>CPF:</strong> ${escapeHtml(triagemAtual.cpf || 'Não informado')}<br>
+      <strong>Temperatura:</strong> ${escapeHtml(triagemAtual.temperatura ?? triagemAtual.temp ?? 'Não informada')} °C<br>
+      <strong>Risco:</strong> ${escapeHtml(triagemAtual.risco || 'Não classificado')}<br>
+      <strong>Alergias:</strong> ${escapeHtml(triagemAtual.alergia || 'Não informadas')}<br>
+      <strong>Apoio IA:</strong> ${escapeHtml(triagemAtual.avaliacaoIA?.prioridadeSugerida || 'Indisponível')}<br>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(212,175,55,.25)">
+        <strong>Justificativa:</strong> ${escapeHtml(triagemAtual.avaliacaoIA?.justificativa || 'Sem avaliação automatizada')}<br>
+        <strong>Intervenção sugerida:</strong> ${escapeHtml(triagemAtual.avaliacaoIA?.intervencaoSugerida || 'Avaliação profissional necessária')}<br>
+        <strong>Segurança:</strong> ${escapeHtml(triagemAtual.avaliacaoIA?.aviso || 'Validar conduta com profissional responsável.')}
+      </div>
+    `;
+  } catch {
+    document.getElementById('pacienteResumo').innerHTML = '<strong>Não foi possível carregar o paciente.</strong>';
+  }
+}
+
+async function carregarMedicacoes() {
+  try {
+    const r = await fetch('/lista-medicacoes');
+    const meds = await r.json();
+    const select = document.getElementById('medicacao');
+    meds.forEach(m => {
+      const o = document.createElement('option'); o.value = m; o.textContent = m; select.appendChild(o);
+    });
+  } catch {}
+}
+
+function configurarAssinatura() {
+  const canvas = document.getElementById('signatureCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#111';
+
+  const ponto = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(canvas.width, (event.clientX - rect.left) * canvas.width / rect.width)),
+      y: Math.max(0, Math.min(canvas.height, (event.clientY - rect.top) * canvas.height / rect.height))
+    };
+  };
+
+  canvas.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    canvas.setPointerCapture?.(event.pointerId);
+    const p = ponto(event);
+    assinaturaAtual = [p];
+    assinaturaStrokes.push(assinaturaAtual);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (!assinaturaAtual) return;
+    event.preventDefault();
+    const p = ponto(event);
+    assinaturaAtual.push(p);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  });
+
+  const finalizar = (event) => {
+    if (!assinaturaAtual) return;
+    event?.preventDefault();
+    assinaturaAtual = null;
+    ctx.closePath();
+  };
+  canvas.addEventListener('pointerup', finalizar);
+  canvas.addEventListener('pointercancel', finalizar);
+  canvas.addEventListener('pointerleave', () => {});
+}
+
+function limparAssinatura() {
+  const canvas = document.getElementById('signatureCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  assinaturaStrokes = [];
+  assinaturaAtual = null;
+}
+
+function temAssinatura() {
+  return assinaturaStrokes.some(stroke => stroke && stroke.length >= 2);
+}
+
+function dadosFormulario() {
+  return {
+    triagemId: triagemAtual?.id || null,
+    avaliacaoIA: triagemAtual?.avaliacaoIA || null,
+    paciente: document.getElementById('paciente').value.trim(),
+    cpf: document.getElementById('cpf').value.trim(),
+    dataConsulta: document.getElementById('dataConsulta').value,
+    medico: document.getElementById('medico').value.trim(),
+    crm: document.getElementById('crm').value.trim(),
+    pressao: document.getElementById('pressao').value.trim(),
+    frequencia: document.getElementById('frequencia').value.trim(),
+    saturacao: document.getElementById('saturacao').value.trim(),
+    queixa: document.getElementById('queixa').value.trim(),
+    historico: document.getElementById('historico').value.trim(),
+    exame: document.getElementById('exame').value.trim(),
+    diagnostico: document.getElementById('diagnostico').value.trim(),
+    medicacao: document.getElementById('medicacao').value,
+    posologia: document.getElementById('posologia').value.trim(),
+    orientacoes: document.getElementById('orientacoes').value.trim(),
+    retorno: document.getElementById('retorno').value,
+    destino: document.getElementById('destino').value,
+    obs: document.getElementById('obs').value.trim(),
+    assinatura: assinaturaStrokes
+  };
+}
+
+async function salvarConsulta(event) {
+  event.preventDefault();
+  const dados = dadosFormulario();
+  if (!dados.paciente || !dados.medico || !dados.dataConsulta) {
+    alert('Preencha paciente, médico e data da consulta.'); return false;
+  }
+  try {
+    const r = await fetch('/consulta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(dados) });
+    const resposta = await r.json();
+    if (!r.ok) throw new Error(resposta.erro || 'Erro ao salvar');
+    consultaSalva = true;
+    document.getElementById('status').textContent = '✓ Consulta salva com sucesso.';
+    alert('Consulta salva com sucesso!');
+  } catch (e) {
+    alert('Não foi possível salvar a consulta: ' + e.message);
+  }
+  return false;
+}
+
+function gerarPDF() {
+  const dados = dadosFormulario();
+  if (!dados.paciente) { alert('Selecione um paciente antes de gerar o PDF.'); return; }
+  if (!dados.medico) { alert('Informe o médico responsável antes de gerar o PDF.'); return; }
+  if (!temAssinatura()) { alert('Faça a assinatura do médico no quadro de assinatura antes de gerar o PDF.'); return; }
+
+  // Gerador PDF simples, sem dependências externas: funciona mesmo sem internet.
+  const ascii = v => String(v ?? 'Nao informado').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const esc = v => ascii(v).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  const wrap = (text, max=92) => {
+    const words = String(text || 'Não informado').split(/\s+/);
+    const lines=[]; let line='';
+    for (const word of words) {
+      if ((line + (line ? ' ' : '') + word).length > max) { if(line) lines.push(line); line=word; }
+      else line += (line ? ' ' : '') + word;
+    }
+    if(line || !lines.length) lines.push(line || 'Não informado');
+    return lines;
+  };
+
+  const pages=[[]]; let page=0; let y=790;
+  const newPage=()=>{ pages.push([]); page++; y=790; };
+  const text=(value,size=10,bold=false,x=45)=>{
+    if(y<55) newPage();
+    pages[page].push({x,y,text:String(value),size,bold}); y-=size+5;
+  };
+  const block=(title,value)=>{
+    if(y<90) newPage();
+    text(title,11,true); wrap(value).forEach(line=>text(line,10,false)); y-=5;
+  };
+
+  text('CAMPO CENTRO OESTE',18,true); text('RELATÓRIO DE CONSULTA / ALTA MÉDICA',13,true); y-=4;
+  text('________________________________________________________________________________',9); y-=4;
+  text('Paciente: ' + (dados.paciente || 'Não informado'),10,true);
+  text('CPF: ' + (dados.cpf || 'Não informado'));
+  text('Data da consulta: ' + (dados.dataConsulta ? dados.dataConsulta.split('-').reverse().join('/') : 'Não informada'));
+  text('Médico: ' + dados.medico + (dados.crm ? '  |  CRM: ' + dados.crm : ''));
+  text('Pressão arterial: ' + (dados.pressao || 'Não informado'));
+  text('Frequência cardíaca: ' + (dados.frequencia || 'Não informado'));
+  text('Saturação de O2: ' + (dados.saturacao || 'Não informado'));
+  y-=4;
+  block('QUEIXA PRINCIPAL / SINTOMAS',dados.queixa);
+  block('HISTÓRICO CLÍNICO',dados.historico);
+  block('EXAME FÍSICO / AVALIAÇÃO',dados.exame);
+  block('DIAGNÓSTICO / HIPÓTESE MÉDICA',dados.diagnostico);
+  const ia = triagemAtual?.avaliacaoIA;
+  if (ia) {
+    block('APOIO AUTOMATIZADO À TRIAGEM — NÃO É DIAGNÓSTICO', 'Prioridade sugerida: ' + (ia.prioridadeSugerida || 'Não definida'));
+    block('JUSTIFICATIVA DA PRIORIDADE (IA)', ia.justificativa);
+    block('INTERVENÇÃO SUGERIDA (IA)', ia.intervencaoSugerida);
+    block('CUIDADOS GERAIS SUGERIDOS (IA)', ia.cuidadosGerais);
+    block('MEDICAMENTOS / SEGURANÇA (IA)', ia.medicamento);
+    if (Array.isArray(ia.alertas)) block('ALERTAS REGISTRADOS NA TRIAGEM', ia.alertas.join(' '));
+    block('AVISO DE SEGURANÇA DA IA', ia.aviso);
+  }
+  block('MEDICAÇÃO E POSOLOGIA',[dados.medicacao || 'Nenhuma',dados.posologia].filter(Boolean).join(' — '));
+  block('ORIENTAÇÕES / RECOMENDAÇÕES',dados.orientacoes);
+  text('Retorno: ' + (dados.retorno ? dados.retorno.split('-').reverse().join('/') : 'Não agendado'));
+  text('Destino / situação: ' + dados.destino,true);
+  block('OBSERVAÇÕES FINAIS',dados.obs);
+  if (temAssinatura()) {
+    if(y<155) newPage();
+    y-=8;
+    text('ASSINATURA DO MÉDICO',11,true);
+    const assinaturaY = y - 8;
+    const assinaturaX = 45;
+    const assinaturaW = 300;
+    const assinaturaH = 82;
+    pages[page].push({ type:'signature', x:assinaturaX, y:assinaturaY, w:assinaturaW, h:assinaturaH, strokes:assinaturaStrokes });
+    y -= assinaturaH + 18;
+    text('____________________________________________________________',9,false,assinaturaX);
+    text(dados.medico + (dados.crm ? ' — CRM ' + dados.crm : ''),10,false,assinaturaX);
+  } else {
+    if(y<100) newPage();
+    y-=8;
+    text('ASSINATURA DO MÉDICO',11,true);
+    text('____________________________________________________________',9,false,45);
+    text(dados.medico + (dados.crm ? ' — CRM ' + dados.crm : ''),10,false,45);
+  }
+
+  // Monta um PDF válido com Helvetica embutida como fonte padrão.
+  const objects=[]; const add=o=>{objects.push(o); return objects.length;};
+  const fontId=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const pageIds=[]; const contentIds=[];
+  for(const pg of pages){
+    let stream='';
+    for(const item of pg){
+      if (item.type === 'signature') {
+        const sx = item.x, sy = item.y, sw = item.w, sh = item.h;
+        for (const stroke of item.strokes || []) {
+          if (!stroke || stroke.length < 2) continue;
+          const first = stroke[0];
+          const firstX = sx + (first.x / 900) * sw;
+          const firstY = sy + sh - (first.y / 220) * sh;
+          stream += 'q 0 0 0 RG 0.9 w ';
+          stream += `${firstX.toFixed(2)} ${firstY.toFixed(2)} m `;
+          for (let j=1; j<stroke.length; j++) {
+            const pt=stroke[j];
+            const x=sx + (pt.x / 900) * sw;
+            const y=sy + sh - (pt.y / 220) * sh;
+            stream += `${x.toFixed(2)} ${y.toFixed(2)} l `;
+          }
+          stream += 'S Q\n';
+        }
+        continue;
+      }
+      const fontSize=item.size || 10;
+      const fontName='/F1';
+      stream += `BT ${fontName} ${fontSize} Tf 1 0 0 1 ${item.x} ${item.y} Tm (${esc(item.text)}) Tj ET\n`;
+    }
+    const contentId=add(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`); contentIds.push(contentId);
+    pageIds.push(add(''));
+  }
+  const pagesId=add('');
+  pageIds.forEach((pid,i)=>{ objects[pid-1]=`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentIds[i]} 0 R >>`; });
+  objects[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>id+' 0 R').join(' ')}] /Count ${pageIds.length} >>`;
+  const catalogId=add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+
+  let pdf='%PDF-1.4\n'; const offsets=[0];
+  for(let i=0;i<objects.length;i++){ offsets[i+1]=pdf.length; pdf += `${i+1} 0 obj\n${objects[i]}\nendobj\n`; }
+  const xref=pdf.length; pdf += `xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=objects.length;i++) pdf += String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  pdf += `trailer\n<< /Size ${objects.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const blob=new Blob([pdf],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  const nome=(dados.paciente||'paciente').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'') || 'paciente';
+  a.href=url; a.download='alta_'+nome+'.pdf'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+carregarPaciente();
+carregarMedicacoes();
+configurarAssinatura();
+</script>
+</body>
+</html>

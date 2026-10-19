@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .btn-tv {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .btn-tv:hover { background: #1e7e34; }
+    .btn-abrir-tv {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-abrir-tv:hover { background: #117a8b; }
+    .consultorio-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      background: #f0f4ff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #d0d8f0;
+    }
+    .consultorio-input label { font-weight: bold; }
+    .consultorio-input input {
+      width: 60px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="site-brand"><img src="assets/logo-campo-centro-oeste.svg" alt="Campo Centro Oeste" /></div>
+
+<div class="container">
+
+  <!-- Cabeçalho com botão da TV -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h2 style="margin:0;">🩺 Painel Médico</h2>
+    <button class="btn-abrir-tv" onclick="window.open('tv.html','_blank')">📺 Abrir Tela da TV</button>
+  </div>
+
+  <!-- Campo criado para informar o consultório e chamar o paciente na TV -->
+  <div class="consultorio-input">
+    <label>Meu Consultório:</label>
+    <input type="text" id="consultorio-num" value="01">
+    <span style="color:#666; font-size:13px;">Este número será exibido na TV ao chamar o paciente.</span>
+  </div>
+
+  <div id="triagens"></div>
+
+  <hr>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div style="text-align:left;">
+      <h3 style="margin-bottom:6px;">Consulta médica</h3>
+      <p style="color:#99917f; font-size:13px;">Selecione um paciente em <b>Atender</b> para abrir a ficha completa de consulta.</p>
+    </div>
+    <button type="button" onclick="abrirConsultaSelecionada()">🩺 Abrir Consulta</button>
+  </div>
+</div>
+
+<script>
+
+let triagensCarregadas = [];
+
+function carregar() {
+  fetch("/triagens")
+    .then(r => r.json())
+    .then(data => {
+      triagensCarregadas = data;
+
+      const div = document.getElementById("triagens");
+      div.innerHTML = "";
+
+      if (data.length === 0) {
+        div.innerHTML = "<p style='color:#888; text-align:center;'>Nenhum paciente na fila.</p>";
+        return;
+      }
+
+      data.forEach((t, index) => {
+        div.innerHTML += `
+          <div class="card">
+            <h3>${t.nome}</h3>
+            <p><b>Sintoma:</b> ${t.sintoma || "Não informado"}</p>
+            <p><b>Temperatura:</b> ${t.temperatura || "Não informada"}°C</p>
+            <p><span class="${t.risco}">${t.risco}</span></p>
+            <p><b>Alergia:</b> ${t.alergia || "Nenhuma"}</p>
+            <p><b>Observação:</b> ${t.observacao || "Nenhuma"}</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button onclick="selecionar(${index})">Atender</button>
+              <button class="btn-tv" onclick="chamarNaTV('${t.nome}')">📺 Chamar na TV</button>
+            </div>
+          </div>
+        `;
+      });
+    });
+}
+
+// Função criada para enviar o nome do paciente para a TV quando ele for chamado no consultório.
+function chamarNaTV(nome) {
+  const consultorio = document.getElementById("consultorio-num").value || "01";
+  fetch("/tv/chamar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      localTipo: "CONSULTÓRIO",
+      localNumero: consultorio,
+      paciente: nome
+    })
+  })
+  .then(r => r.json())
+  .then(() => {
+    alert("✅ " + nome + " foi chamado na TV para o Consultório " + consultorio + "!");
+  });
+}
+
+function selecionar(index) {
+  const t = triagensCarregadas[index];
+  window.pacienteSelecionado = t;
+  if (t.alergia && t.alergia !== "Nenhuma") {
+    alert("⚠️ Paciente possui alergia: " + t.alergia);
+  }
+  abrirConsulta(t);
+}
+
+function abrirConsulta(t) {
+  if (!t || !t.id) { alert("Paciente inválido."); return; }
+  window.open("consulta.html?triagemId=" + encodeURIComponent(t.id), "_blank");
+}
+
+function abrirConsultaSelecionada() {
+  if (!window.pacienteSelecionado) {
+    alert("Clique em Atender em um paciente primeiro.");
+    return;
+  }
+  abrirConsulta(window.pacienteSelecionado);
+}
+
+
+carregar();
+
+// Atualiza lista automaticamente a cada 10 segundos
+setInterval(carregar, 10000);
+
+</script>
+
+</body>
+</html>

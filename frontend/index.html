@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campo Centro Oeste — Sistema Hospitalar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+  <div class="login-brand">
+    <img src="assets/logo-campo-centro-oeste.svg" alt="Campo Centro Oeste — Sistema Hospitalar">
+  </div>
+  <div class="login-subtitle">𓂀 SISTEMA HOSPITALAR • CENTRO OESTE 𓂀</div>
+  <input id="usuario" placeholder="Usuário" autocomplete="username">
+  <input id="senha" type="password" placeholder="Senha" autocomplete="current-password">
+  <button onclick="login()">Entrar</button>
+</div>
+<script>
+function login() {
+  fetch("/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ usuario: usuario.value, senha: senha.value })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.tipo === "triagem") location.href = "triagem.html";
+    if(data.tipo === "medico") location.href = "medico.html";
+    if(data.tipo === "atendimento") location.href = "atendimento.html";
+  })
+  .catch(() => alert("Não foi possível conectar ao servidor."));
+}
+</script>
+</body>
+</html>

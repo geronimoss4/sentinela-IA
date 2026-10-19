@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#090908"/><stop offset="0.55" stop-color="#11100d"/><stop offset="1" stop-color="#050505"/></linearGradient>
+    <pattern id="glyphs" width="190" height="150" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#8c7028" stroke-width="2" opacity=".22">
+        <path d="M22 25h35M39 8v55M25 42l14-14 14 14M82 18c16-14 31 4 19 19-9 11-23 18-31 28M118 14v48M103 29h30M125 40l18 18M153 15l-8 45"/>
+        <circle cx="39" cy="88" r="14"/><path d="M25 88h28M39 74v28M78 78l22 18-22 18-22-18zM130 78h28l-14 38z"/>
+      </g>
+    </pattern>
+    <radialGradient id="glow"><stop stop-color="#d4af37" stop-opacity=".13"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#glyphs)"/>
+  <ellipse cx="800" cy="350" rx="650" ry="430" fill="url(#glow)"/>
+  <g fill="none" stroke="#b18b2c" stroke-width="3" opacity=".25">
+    <path d="M0 840 L250 570 L500 840 Z M260 840 L520 500 L780 840 Z M820 840 L1080 500 L1340 840 Z M1080 840 L1350 570 L1600 840 Z"/>
+    <path d="M0 842 H1600"/>
+    <path d="M70 900 H1530 M90 920 H1510"/>
+    <path d="M790 130 v190 M695 225 h190"/>
+  </g>
+  <g fill="#d4af37" opacity=".2"><circle cx="800" cy="225" r="3"/><circle cx="780" cy="225" r="2"/><circle cx="820" cy="225" r="2"/></g>
+</svg>
